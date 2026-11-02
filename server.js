@@ -145,16 +145,20 @@ app.get('/api/books/search', (req, res) => {
         books: matchingBooks
     });
 });
-app.patch('/api/books/:id/issue', (req, res) => {
+app.post('/api/books/:id/issue', (req, res) => {
     const bookId = parseInt(req.params.id);
     const book = books.find(b => b.id === bookId);
+
+
     if (!book) {
         return res.status(404).json({ error: "Book not found" });
     }
 
+ 
     if (book.available <= 0) {
         return res.status(400).json({ error: "No copies available to issue" });
     }
+
 
     book.available -= 1;
 
