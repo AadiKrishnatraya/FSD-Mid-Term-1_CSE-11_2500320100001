@@ -19,7 +19,7 @@ app.post('/api/books', (req, res) => {
 
     if (!id || !title || !author || quantity === undefined || available === undefined) {
         return res.status(400).json({ 
-            error: "Missing required fields. Please provide id, title, author, quantity, and available." 
+            error: "Missing required fields." 
         });
     }
 
@@ -110,6 +110,59 @@ app.put('/api/books/:id', (req, res) => {
     });
 });
 
+app.delete('/api/books/:id', (req, res) => {
+    const bookId = parseInt(req.params.id);
+    const bookIndex = books.findIndex(b => b.id === bookId);
+    if (bookIndex === -1) {
+        return res.status(404).json({ error: "Book not found" });
+    }
+    const book = books[bookIndex];
+
+    if (book.available < book.quantity) {
+        return res.status(400).json({ 
+            error: "Cannot delete book. One or more copies are currently checked out." 
+        });
+    }
+    const deletedBook = books.splice(bookIndex, 1);
+    return res.status(200).json({
+        message: "Book deleted successfully",
+        book: deletedBook[0]
+    });
+});
+app.get('/api/books/search', (req, res) => {
+    const titleQuery = req.query.title;
+
+    if (!titleQuery) {
+        return res.status(400).json({ error: "Title query parameter is required." });
+    }
+
+    const matchingBooks = books.filter(book => 
+        book.title.toLowerCase().includes(titleQuery.toLowerCase())
+    );
+
+    return res.status(200).json({
+        count: matchingBooks.length,
+        books: matchingBooks
+    });
+});
+app.patch('/api/books/:id/issue', (req, res) => {
+    const bookId = parseInt(req.params.id);
+    const book = books.find(b => b.id === bookId);
+    if (!book) {
+        return res.status(404).json({ error: "Book not found" });
+    }
+
+    if (book.available <= 0) {
+        return res.status(400).json({ error: "No copies available to issue" });
+    }
+
+    book.available -= 1;
+
+    return res.status(200).json({
+        message: "Book issued successfully",
+        book: book
+    });
+});
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`Server running on port: ${PORT}`);
 });
